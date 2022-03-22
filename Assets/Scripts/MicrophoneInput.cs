@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using CustomControls;
 
 public class MicrophoneInput : MonoBehaviour {
     AudioClip microphoneInput;
@@ -19,9 +20,11 @@ public class MicrophoneInput : MonoBehaviour {
     public System.Action OnBelowThreshold;
 
     public GameObject settingsCanvas;
-    public Slider sensitivitySlider;
-    public TextMeshProUGUI sensitivityValueText;
-    public TMP_Dropdown microphoneDropdown;
+    public Slider2D sensitivitySlider;
+    public TextMeshPro sensitivityValueText;
+
+    public Dropdown2D micDropdown;
+    public string microphoneLookup = "AT2020USB";
     private string selectedMicrophone;
 
     private void Awake() {
@@ -29,16 +32,21 @@ public class MicrophoneInput : MonoBehaviour {
 
         sensitivitySlider.value = sensitivity;
         sensitivityValueText.text = sensitivity.ToString("F4");
-        sensitivitySlider.onValueChanged.AddListener(delegate { OnSensitivityChanged(); });
+        sensitivitySlider.OnValueChanged += OnSensitivityChanged;
 
         if (Microphone.devices.Length > 0) {
-            selectedMicrophone = Microphone.devices[0];
-            microphoneInput = Microphone.Start(selectedMicrophone, true, 999, 44100);
+            micDropdown.SetDropdownOptions(Microphone.devices.ToList());
+            micDropdown.OnValueChanged += OnMicrophoneChanged;
+            
+            if (String.IsNullOrEmpty(microphoneLookup))
+                selectedMicrophone = Microphone.devices[0];
+            else
+                selectedMicrophone = Microphone.devices.FirstOrDefault(x => x.Contains(microphoneLookup));
+
+            microphoneInput = Microphone.Start(selectedMicrophone, true, 60 * 60 - 1, 44100);
             microphoneInitialized = true;
-            microphoneDropdown.AddOptions(Microphone.devices.ToList());
         }
 
-        microphoneDropdown.onValueChanged.AddListener(delegate { OnMicrophoneChanged(); });
     }
 
     private void Start() {
@@ -51,7 +59,6 @@ public class MicrophoneInput : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.BackQuote))
         {
             settingsCanvas.SetActive(settingsCanvas.activeInHierarchy == false);
-            settingsCanvas.GetComponentInChildren<TMP_Dropdown>().Select();
         }
     }
 
@@ -112,13 +119,12 @@ public class MicrophoneInput : MonoBehaviour {
         sensitivityValueText.text = sensitivity.ToString("F4");
     }
 
-    private void OnMicrophoneChanged()
+    private void OnMicrophoneChanged(string selectedMic)
     {
         StopAllCoroutines();
         Microphone.End(selectedMicrophone);
-        int microphoneIndex = microphoneDropdown.value;
-        selectedMicrophone = microphoneDropdown.options[microphoneIndex].text;
-        microphoneInput = Microphone.Start(selectedMicrophone, true, 999, 44100);
+        selectedMicrophone = selectedMic;
+        microphoneInput = Microphone.Start(selectedMicrophone, true, 60*60 - 1, 44100);
         StartCoroutine(CheckIfAboveThreshold());
     }
 }

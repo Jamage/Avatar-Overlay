@@ -2,28 +2,38 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using CustomControls;
 
 public class ParticleSystemBehavior : MonoBehaviour
 {
     public bool active;
+    public ToggleControl particleToggle;
     public bool useBurst = false;
-    public ParticleSystem particles;
+    public ParticleSystem yipYapParticles;
     public ParticleSystem burstParticles;
     public MicrophoneInput microphoneInput;
 
     private void OnEnable() {
         microphoneInput = GetComponent<MicrophoneInput>();
+        particleToggle.OnValueChanged += OnToggle;
+        particleToggle.Setup(active);
         microphoneInput.OnAboveThreshold += OnAboveThreshold;
         microphoneInput.OnBelowThreshold += OnBelowThreshold;
     }
 
+    private void OnToggle(bool toggleValue)
+    {
+        active = toggleValue;
+    }
+
     private void OnAboveThreshold() {
-        particles.Play();
+        if(active)
+            yipYapParticles.Play();
     }
 
     private void OnBelowThreshold() {
-        particles.Stop();
-        if(useBurst)
+        yipYapParticles.Stop();
+        if(useBurst && active)
             StartCoroutine(PlayBurstParticles());
     }
 
