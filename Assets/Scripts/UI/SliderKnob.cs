@@ -2,40 +2,46 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-public class SliderKnob : MonoBehaviour
+namespace CustomControls
 {
-
-    public static UnityAction<Vector3> OnValueDragging;
-    public static UnityAction<Vector3> OnValueChanged;
-
-    private void OnMouseDown()
+    public class SliderKnob : MonoBehaviour
     {
-        
-    }
+        public UnityAction<float> OnValueDragging;
+        public UnityAction<float> OnValueChanged;
+        public SpriteRenderer Background;
+        public float sliderWidth;
+        public Vector3 startPos;
+        public Vector3 endPos;
 
-    private void OnMouseDrag()
-    {
-        //adjust horizontal position
-        //On Value Changed (internal)
-        
-        OnValueDragging?.Invoke(transform.localPosition);
-    }
+        void Awake()
+        {
+            sliderWidth = Background.size.x;
+            startPos = new Vector3(transform.parent.position.x - (sliderWidth / 2), transform.parent.position.y, transform.position.z);
+            endPos = new Vector3(transform.parent.position.x + (sliderWidth / 2), transform.parent.position.y, transform.position.z);
+        }
 
-    private void OnMouseUp()
-    {
-        //On Value Changed (external)
-        OnValueChanged?.Invoke(transform.localPosition);
-    }
+        private void OnMouseDrag()
+        {
+            Vector3 worldPoint = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            worldPoint.y = transform.position.y;
+            worldPoint.z = transform.position.z;
+            if (worldPoint.x < startPos.x)
+                transform.position = startPos;
+            else if (worldPoint.x > endPos.x)
+                transform.position = endPos;
+            else
+                transform.position = worldPoint;
 
-    // Use this for initialization
-    void Start()
-    {
+            float percentValue = Mathf.InverseLerp(startPos.x, endPos.x, transform.position.x);
 
-    }
+            OnValueDragging?.Invoke(percentValue);
+        }
 
-    // Update is called once per frame
-    void Update()
-    {
+        private void OnMouseUp()
+        {
+            float percentValue = Mathf.InverseLerp(startPos.x, endPos.x, transform.position.x);
+            OnValueChanged?.Invoke(percentValue);
+        }
 
     }
 }
